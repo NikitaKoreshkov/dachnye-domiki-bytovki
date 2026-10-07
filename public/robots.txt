@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://xn-----6kcgfhcg3aadtevltg5e6dydk.xn--p1ai/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /private/
+
+# Allow important pages
+Allow: /
+Allow: /projects
+Allow: /about
+Allow: /contacts
+Allow: /blog
+
+# Crawl delay
+Crawl-delay: 1

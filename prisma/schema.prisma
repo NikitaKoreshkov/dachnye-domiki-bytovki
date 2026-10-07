@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String // Хранится хеш, не пароль
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  isActive      Boolean   @default(false) // Активен ли аккаунт после верификации email
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  // verificationCodes VerificationCode[]
+
+  favorites       Project[]          @relation("UserFavorites")
+  compareProjects Project[]          @relation("UserCompare")
+  documents       EstimateDocument[]
+  leads           WhatsAppLead[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  slug        String   @unique // URL-friendly ID для маршрутизации (например: skandy-140)
+  title       String
+  area        Int
+  priceFrom   Int
+  priceTo     Int?
+  floors      Float
+  material    String // 'каркасный' | 'SIP' | 'комбинированный'
+  buildTime   Int // в днях
+  completion  String // 'под ключ' | 'тёплый контур' | 'коробка'
+  region      String
+  image       String
+  images      String[] @default([]) // массив путей к изображениям
+  tags        String[] @default([])
+  hasTerrasse Boolean  @default(false)
+  hasBath     Boolean  @default(false)
+  hasGarage   Boolean  @default(false)
+  features    String[] @default([])
+  description String?  @db.Text
+  advantages  String[] @default([])
+  technicalSpecs String? @db.Text // Технические характеристики в виде простого текста
+  specs       Json? // технические характеристики в формате JSON
+  filterValues Json? // значения для динамических фильтров каталога { "filterKey": value }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  favoritedBy User[] @relation("UserFavorites")
+  comparedBy  User[] @relation("UserCompare")
+
+  @@index([slug])
+  @@index([region])
+  @@index([material])
+  @@index([completion])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model EstimateDocument {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  params    Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model WhatsAppLead {
+  id        String   @id @default(uuid())
+  name      String?
+  phone     String?
+  message   String?  @db.Text
+  params    Json?
+  purpose   String?
+  source    String? // e.g. calculator, contact_form
+  projectId String?
+  createdAt DateTime @default(now())
+  userId    String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+// Популярные проекты: до 2 панелей, каждая до 6 элементов
+model PopularPanel {
+  id        String        @id @default(uuid())
+  title     String
+  order     Int           @default(0)
+  items     PopularItem[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model PopularItem {
+  id          String   @id @default(uuid())
+  panelId     String
+  title       String
+  area        Int
+  priceFrom   Int
+  priceTo     Int?
+  floors      Float    @default(1)
+  material    String // 'каркасный' | 'SIP' | 'комбинированный'
+  buildTime   Int      @default(30) // в днях
+  completion  String   @default("под ключ") // 'под ключ' | 'тёплый контур' | 'коробка'
+  region      String   @default("Москва")
+  image       String
+  images      String[] @default([]) // массив путей к изображениям
+  tags        String[] @default([])
+  hasTerrasse Boolean  @default(false)
+  hasBath     Boolean  @default(false)
+  hasGarage   Boolean  @default(false)
+  features    String[] @default([])
+  description String?  @db.Text
+  advantages  String[] @default([])
+  technicalSpecs String? @db.Text // Технические характеристики в виде простого текста
+  specs       Json? // технические характеристики в формате JSON
+  filterValues Json? // значения для динамических фильтров каталога { "filterKey": value }
+  order       Int      @default(0)
+  slug        String?  @unique // Уникальный slug для популярного проекта (если нет связи с реальным проектом)
+  projectSlug String? // Опциональная связь с реальным проектом (если нужна)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  panel PopularPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, order])
+  @@index([projectSlug])
+  @@index([slug])
+}
+
+// Отзывы
+model Review {
+  id        String   @id @default(uuid())
+  name      String
+  city      String
+  text      String   @db.Text
+  image     String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Конфиг блока отзывов
+model ReviewsConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Реальные фото и отзывы наших клиентов")
+  description   String   @db.Text @default("Мы собрали часть отзывов — чтобы вы могли увидеть, как строим дома на практике.\n\nОстальные отзывы можно посмотреть по запросу или в наших соцсетях.")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Часто задаваемые вопросы
+model FAQItem {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+// Конфиг калькулятора и шаблонов как единый JSON
+model CalculatorConfig {
+  id                String   @id @default(uuid())
+  houseTypes        Json // [{id,name,basePrice,image}]
+  finishingOptions  Json // [{id,name,multiplier}]
+  additionalOptions Json // [{id,name,price}]
+  stepTexts         Json // {step1Title, step2Title, step3Title, step4Title}
+  areaSettings      Json? // {minArea, maxArea, defaultArea}
+  formula           String // js-like expression or description
+  whatsappTemplate  String   @db.Text
+  estimateTemplate  String   @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Конфиг фильтров каталога (JSON с блоками и опциями)
+model CatalogFiltersConfig {
+  id        String   @id @default(uuid())
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Конфиг хедера сайта
+model HeaderConfig {
+  id            String   @id @default(uuid())
+  logoText      String   @default("Дачные-Домики-Бытовки")
+  logoImage     String?
+  showLogoText  Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг Hero блока
+model HeroConfig {
+  id            String   @id @default(uuid())
+  heroImage     String   @default("/images/house.jpg")
+  title         String   @default("Ваш каркасный дом мечты")
+  subtitle      String   @default("Под ключ. Быстро. Надёжно. С гарантией качества.")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг блока "Как мы работаем"
+model ProcessStepsConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Как мы работаем")
+  subtitle      String   @default("Простой и понятный процесс от проекта до готового дома")
+  steps         Json // Array of {id, title, description, details}
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг блока "Наши преимущества"
+model AdvantagesConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Наши преимущества")
+  subtitle      String   @default("Почему клиенты выбирают именно нас для строительства своего дома")
+  items         Json // Array of {id, title, description}
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг футера сайта
+model FooterConfig {
+  id            String   @id @default(uuid())
+  companyName   String   @default("Дачные-Домики-Бытовки")
+  companyDescription String   @default("Строим качественные каркасные дома под ключ. Быстро, надежно, с гарантией качества.")
+  whatsappUrl   String   @default("https://max.ru/u/f9LHodD0cOJ11mRNBmwv4GMET8TQOYXsn4AglpOBhEGg5JpR7w9zmuv4jZ8")
+  whatsappText  String   @default("🏠 Дачные-Домики-Бытовки\n\nЗдравствуйте! Хочу узнать больше о строительстве каркасных домов.\n\nГотов(а) ответить на ваши вопросы!")
+  phone         String   @default("+7 (495) 023-82-15")
+  email         String   @default("info@dachnye-domiki-bytovki.ru")
+  addressLine1  String   @default("108811, г. Москва,")
+  addressLine2  String   @default("Московский п., ул. Картмазовские пруды,")
+  addressLine3  String   @default("д. 2, корп. 3, кв. 474")
+  workingHoursLine1 String @default("Пн-Пт: 9:00 - 18:00")
+  workingHoursLine2 String @default("Сб-Вс: 10:00 - 16:00")
+  newsletterTitle String  @default("Новости и акции")
+  newsletterDescription String @default("Подпишитесь на рассылку и получайте информацию о новых проектах и специальных предложениях")
+  copyright     String   @default("© 2025 Дачные-Домики-Бытовки. Все права защищены.")
+  ip            String   @default("ИП: ГЮЛЬАХМЕДОВ АТАЙ ЭДИСОНОВИЧ")
+  inn           String   @default("ИНН: 055000493170")
+  legalAddress  String   @default("Юридический адрес: 108811, РОССИЯ, Г МОСКВА, МОСКОВСКИЙ П, УЛ КАРТМАЗОВСКИЕ ПРУДЫ, Д 2, КОРП 3. КВ 474")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг страницы Политики конфиденциальности
+model PrivacyConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Политика конфиденциальности")
+  content       String   @db.Text // Полный HTML/текст контента страницы
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг страницы Условий использования
+model TermsConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Условия использования")
+  content       String   @db.Text // Полный HTML/текст контента страницы
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг страницы Cookie
+model CookiesConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Политика использования файлов Cookie")
+  content       String   @db.Text // Полный HTML/текст контента страницы
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг метаданных сайта (favicon, seo и т.д.)
+model SiteMetadataConfig {
+  id              String   @id @default(uuid())
+  faviconUrl      String?  // URL favicon
+  appleTouchIcon  String?  // URL для Apple Touch Icon
+  siteTitle       String   @default("Дачные домики под ключ | Дачные-Домики-Бытовки")
+  siteDescription String   @default("Строительство дачных домиков под ключ. Каркасные дома от 205 000 руб. Проект, доставка, монтаж и отделка.")
+  siteKeywords    String   @default("дачные домики под ключ, каркасные дома, строительство домов, Москва, Россия, дом под ключ, дача, коттедж")
+  ogImage         String   @default("/images/house.jpg") // Open Graph изображение
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Конфиг типового договора
+model ContractTemplateConfig {
+  id            String   @id @default(uuid())
+  filePath      String?  // Путь к загруженному PDF файлу типового договора
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Конфиг SEO-текста на странице каталога
+model CatalogSeoTextConfig {
+  id            String   @id @default(uuid())
+  title         String   @default("Каркасные дома под ключ в России")
+  content       String   @db.Text // Полный текст описания
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Панели опций на карточке проекта: отделка, утепление, пол, фундамент
+model ProjectOptionsConfig {
+  id         String   @id @default(uuid())
+  finishing  Json // [{id,label,price,isDefault}]
+  insulation Json
+  floor      Json
+  foundation Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
