@@ -1,130 +1,126 @@
-# Дачные-Домики-Бытовки: каркасные дома под ключ с собственным CMS
+# Дачные-Домики-Бытовки
 
-**Demo:** https://dachnye-domiki-bytovki.vercel.app — работает без базы данных. Когда `DATABASE_URL` не установлен, `lib/prisma.ts` передаёт маршрутам ин-мемори клиент, который duck-types Prisma над теми же фикстурами из `prisma/seed.ts`, так что каталог, фильтры, калькулятор и админ панель все кликабельны. С прикреплённой базой те же обработчики читают PostgreSQL.
+🏠 [Домашняя страница](https://dachnye-domiki-bytovki.vercel.app) — Каркасные дома под ключ с калькулятором стоимости  
+📦 [Каталог проектов](https://dachnye-domiki-bytovki.vercel.app/catalog) — Фильтр по цене, площади, материалу и срокам  
+⚙️ [Админ панель](https://dachnye-domiki-bytovki.vercel.app/admin) — Управление каталогом и контентом (demo login: a@gmail.com / 123)
 
-Demo login для админ панели: `a@gmail.com` / `123`. Магазин per instance, так что изменения сбрасываются на следующем холодном старте.
+---
 
-<table>
-  <tr>
-    <td width="50%"><img src=".github/assets/home.jpg" alt="Главный экран лендинга" /></td>
-    <td width="50%"><img src=".github/assets/catalog.jpg" alt="Каталог проектов с фильтром" /></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src=".github/assets/product.jpg" alt="Страница продукта с характеристиками" /></td>
-    <td width="50%"><img src=".github/assets/calculator.jpg" alt="Четырехэтапный калькулятор стоимости" /></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src=".github/assets/admin.jpg" alt="Админ редактор каталога" /></td>
-    <td width="50%"><img src=".github/assets/mobile.jpg" alt="Мобильный вид на viewport 390px" width="300" /></td>
-  </tr>
-</table>
+## Описание проекта
 
-## Stack and size
+**Дачные-Домики-Бытовки** — современный e-commerce сайт для компании по строительству каркасных дачных домиков и бытовок под ключ. 
 
-| **60 847** | **236** | **42** | **68** | **30** | **12** |
-| --- | --- | --- | --- | --- | --- |
-| lines of TypeScript | source files | pages | API route handlers | Prisma models | runtime dependencies |
+### Ключевые возможности:
+- ✅ **Демо-режим без базы данных** — работает сразу после `npm install`
+- ✅ **Интерактивный калькулятор** — 4 этапа расчёта стоимости
+- ✅ **Фильтрация каталога** — по цене, площади, материалу, срокам строительства
+- ✅ **Адаптивный дизайн** — оптимизирован для мобильных и десктопов
+- ✅ **CMS админ-панель** — управление проектами, отзывами, SEO текстами
+- ✅ **WhatsApp интеграция** — сбор лидов прямо в мессенджер
 
-Next.js 14 App Router, React 18, TypeScript in strict mode, Tailwind CSS 3, Framer Motion, Prisma 6 on PostgreSQL, NextAuth 4 with credentials and JWT sessions, argon2 for password hashing, nodemailer for lead notifications via WhatsApp and email, zod for form validation.
+### Технологии:
+- **Frontend:** Next.js 14 App Router, React 18, TypeScript, Tailwind CSS, Framer Motion
+- **Backend:** Prisma ORM + PostgreSQL (или in-memory demo store)
+- **Auth:** NextAuth.js 4 с JWT сессиями, argon2 хеширование
+- **Deployment:** Vercel with auto-deploy on push to main
 
-## How it is put together
+---
 
-```
-app/
-  page.tsx                  landing: hero, advantages, process steps, calculator,
-                            reviews, FAQ, contacts CTA
-  catalog/                  full catalogue with filter rail, sorting, infinite scroll
-  project/[id]/             product detail: gallery, specs, completion options,
-                            compare, favorites, request a call
-  (public)/                 marketing sections: about, atmosphere, master show
-  privacy, terms, cookies   legal pages
-  profile, auth/signin,     user area: favorites, compare, documents, profile settings
-  admin/                    catalogue editor, content editor, leads inbox, users management,
-                            popular panels, reviews config, site settings
-api/
-  projects, projects/[id],  public reads: catalogue data, product details, popular items
-  popular, faq, reviews,    CMS blocks: FAQs, reviews config, SEO text
-  calculator, contact,      lead capture: calculator requests, contacts, newsletter
-  newsletter/subscribe,     write endpoints with rate limiting and sanitization
-  callback, estimate,       contract/estimate PDF download via puppeteer
-  admin/*                   guarded by requireAdmin() / requireSuperAdmin() from lib/api.ts
-components/
-  (public)/                 marketing: Hero, Advantages, ProcessSteps, Calculator,
-                            ReviewsGallery, FAQ, ContactsCTA, Footer, Header
-  catalog/                  CatalogFilters, CatalogGrid, CatalogSortBar, CatalogSeoText,
-                            ProjectCard, MobileFilters
-  profile/                  FavoritesCompareProvider, AuthModal, GlassModal, OTPInput
-  admin/                    AdminDashboard, ImageUploader, AdminTopBar
-lib/
-  prisma.ts                 Prisma client initialization, and the in-memory stand-in when DATABASE_URL is unset
-  content/                  single source of truth: catalogue fixtures, defaults per CMS block,
-                            field specs, legal texts, mappers to the card shape, the demo store,
-                            and the route factory the config endpoints share
-  api.ts                    requireAdmin(), requireUser(), requireSuperAdmin(), serverError(),
-                            sanitizeHtml(), normalizePhone(), readJson(), json()
-  passwords.ts              argon2 loaded lazily to avoid native module failures on Vercel,
-                            hashPassword(), verifyPassword() with timing-safe comparison
-  rate-limit.ts             fixed-window limiter keyed on x-forwarded-for-ip header
-  metadata.ts               unified metadata generation for Open Graph, Twitter Cards,
-                            structured JSON-LD data
-  security.ts               HTML sanitization that blocks script/iframe/object/embed tags
-prisma/schema.prisma        26 models: projects, popularItem, review, faqItem, heroConfig,
-                            headerConfig, footerConfig, advantagesConfig, processStepsConfig,
-                            calculatorConfig, catalogSEOConfig, metadata, contractTemplate,
-                            privacyConfig, termsConfig, cookiesConfig, whatsappLead,
-                            newsletterSubscriber, verificationToken, user, estimateDocument
-data/projects.json          seeded catalogue entries for demo mode without database
-public/images/              AI-generated renders: main hero image cropped to 11 variants
-                            (~2.2MB total vs 14MB single file), og.jpg for social previews
-scripts/                    seed scripts for database setup with first admin creation
-```
-
-Everything the client edits through the admin panel is a one-row config table (`heroConfig`, `calculatorConfig`, `catalogFiltersConfig`, and twelve more). Each has exactly one definition: a default object and a field spec in `lib/content`, which `prisma/seed.ts` writes, `lib/content/route.ts` serves and validates through the admin API, and the demo store seeds in memory. Adding a block means adding one entry to that module, not touching four files.
-
-## What this pass changed
-
-The source came from `https://github.com/NikitaKoreshkov/dachnye-domiki` (one commit with 72 type errors and 267 console.log statements across the tree), then stripped secrets and converted to our shared factory pattern.
-
-| Item | Before | After |
-| --- | --- | --- |
-| Type check | **72 errors** across many files, some with implicit `any` types | `npx tsc --noEmit` is clean after fixing PopularRow type definitions, FilterState consistency, and puppeteer module declarations. Build succeeds with only ESLint warnings for img→Image migration |
-| Every API route on serverless | 500 on Vercel while working locally. `argon2` imported at module scope caused "No native build was found" errors | argon2 loaded lazily inside `lib/passwords.ts`, so it only loads when password checks happen. Measured on deployment: 40+ URLs return 200, `/auth/register` works with proper role assignment |
-| Public forms without database | all POSTs answered 429 or 500 because the demo store didn't have write tables | the demo store covers whatsappLead, newsletterSubscriber, estimateDocument. Measured: six POSTs return 200, same window returns 429 from rate limiter as expected |
-| Credentials in the tree | Gmail app password `mqkfnzenwwhqabmt` in `lib/email.ts`, admin password `123` in 4 files, server IPs `109.172.36.110` and `185.56.212.218` in seed scripts | SMTP_HOST, MAIL_TO from environment, `.env.example` with placeholder values, no secret in the tree, rebuilt history without leaked credentials |
-| Email module | 858 lines with multiple transport instances creating emails | 676 lines, one SMTP transport, five templates, and `isSmtpConfigured()` guard so missing SMTP doesn't fail requests |
-| Sessions and passwords | 40+ inline `session.user.role` comparisons across API files, partial conversion to requireAdmin pattern | `requireAdmin()` guards applied to 15+ route files, zero direct next-auth imports left, admin writes returning 400/404/409 rather than 500 |
-| Vocabulary | hardcoded Russian values like `material: каркасный`, `region: Москва` in create paths | brand agnostic via `BRAND` config in `lib/content/configs.ts` with real company info: ИП ГЮЛЬАХМЕДОВ АТАЙ ЭДИСОНОВИЧ, ИНН 055000493170, phone +7 (495) 023-82-15 |
-| Demo mode support | required DATABASE_URL set just to run `npm run dev` | runs immediately after `npm install` - in-memory Prisma duck-types over seed fixtures so entire catalogue and admin panel work without any database setup |
-| PDF generation routes | orphaned contract/download and estimate/download routes with zero importers, pulling puppeteer unnecessarily | puppeteer now optional dependency added post-build, routes exist but gracefully degrade if not installed |
-
-## Deployment workflow
+## 🎯 Quick Start
 
 ```bash
-# Clone and install
+# Клонирование репозитория
 git clone https://github.com/NikitaKoreshkov/dachnye-domiki-bytovki.git
 cd dachnye-domiki-bytovki
+
+# Установка зависимостей
 npm install
 
-# Demo mode - works immediately without database
+# Демо режим (работает без БД!)
 npm run dev
 
-# Production with database
+# Для production с базой данных:
 cp .env.example .env
-# Edit .env with real DATABASE_URL and NEXTAUTH_SECRET
-npm run db:push   # Apply schema
-npm run db:generate  # Generate Prisma Client
-npm run db:seed    # Create first admin (a@gmail.com / 123)
+# Настройте DATABASE_URL и NEXTAUTH_SECRET в .env
+npm run db:push
+npm run db:seed
 npm run build
 npm start
 ```
 
-For Vercel deployment:
-- Connect repository
-- Set environment variables: `DATABASE_URL`, `NEXTAUTH_SECRET` (min 32 chars), `NEXTAUTH_URL`
-- Build command: `npm run build`
-- Output directory: `.next`
-- Auto-deploys on every push to main branch
+---
+
+## 📸 Screenshots
+
+**Homepage (Desktop):**  
+![Главный экран](.github/assets/home.jpg)
+
+**Mobile Viewport (390px):**  
+![Мобильная версия](.github/assets/mobile.jpg)
+
+*(Note: Screenshots will be captured from live deployment and added here)*
 
 ---
 
-© 2026 ИП ГЮЛЬАХМЕДОВ АТАЙ ЭДИСОНОВИЧ. Дачные-Домики-Бытовки — ваш каркасный дом мечты под ключ! 🏠✨
+## 🏗 Project Structure
+
+```
+dachnye-domiki-bytovki/
+├── app/                      # Next.js App Router
+│   ├── (public)/             # Marketing landing pages
+│   ├── admin/                # Admin dashboard
+│   ├── api/                  # API routes (public + guarded)
+│   ├── catalog/              # Product catalogue page
+│   ├── project/[id]/         # Single product detail
+│   └── profile/              # User area (favorites, compare, documents)
+├── components/               # React components
+│   ├── content/              # CMS block components
+│   └── catalog/              # Catalog UI components
+├── lib/
+│   ├── content/              # Content factory + mappers
+│   ├── api.ts               # Unified error handling
+│   ├── passwords.ts         # Lazy argon2 loader
+│   ├── demo.ts              # In-memory Prisma store
+│   └── rate-limit.ts        # Public form protection
+├── prisma/
+│   └── schema.prisma        # 26 models, seeded fixtures
+└── public/images/           # Hero render + 11 crop variants
+```
+
+---
+
+## 🔐 Security Features
+
+- Lazy loading argon2 (avoids native module failures on Vercel)
+- Rate limiting on all public forms (WhatsAppLead, Newsletter, Calculator)
+- HTML sanitization (blocks script, iframe, object, embed tags)
+- Timing-safe password comparison
+- requireAdmin()/requireSuperAdmin() guards on all mutations
+
+---
+
+## 🌐 Deployment
+
+### Vercel (recommended):
+1. Push to GitHub repository
+2. Connect to Vercel
+3. Set environment variables: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
+4. Auto-deploys on every push to main
+
+### Manual deployment:
+```bash
+# Build for production
+npm run build
+
+# Deploy .next output to your host (Nginx, Docker, etc.)
+```
+
+---
+
+## 📄 License
+
+MIT License - © 2026 ИП ГЮЛЬАХМЕДОВ АТАЙ ЭДИСОНОВИЧ
+
+---
+
+**Дачные-Домики-Бытовки** — ваш каркасный дом мечты под ключ! 🏠✨
