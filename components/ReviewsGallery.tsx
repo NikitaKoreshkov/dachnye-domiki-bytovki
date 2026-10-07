@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -230,8 +231,9 @@ export default function ReviewsGallery() {
                         alt={`Дом клиента ${reviewsData[currentReview].name}`}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={(e) => {
+                          /* eslint-disable-next-line no-console */
                           console.error('Image load error:', reviewsData[currentReview].image)
-                          (e.target as HTMLImageElement).src = '/images/house.jpg'
+                          ;(e.target as HTMLImageElement).src = '/images/house.jpg'
                         }}
                       />
                     ) : (

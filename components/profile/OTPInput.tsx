@@ -56,7 +56,9 @@ export default function OTPInput({ length = 4, onComplete, error }: OTPInputProp
         {values.map((value, index) => (
           <input
             key={index}
-            ref={el => inputRefs.current[index] = el}
+            ref={(el: HTMLInputElement | null) => {
+              if (el) inputRefs.current[index] = el
+            }}
             type="text"
             inputMode="numeric"
             maxLength={1}

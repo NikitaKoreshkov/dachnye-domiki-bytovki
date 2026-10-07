@@ -146,11 +146,11 @@ class Table {
   private shape(row: Row, args: Args): Row {
     let out = row
     if (args.select) {
-      out = {} as Row
+      out = {} as any
       for (const key of Object.keys(args.select)) {
-        if (key in row) out[key] = row[key]
+        if (key in row) (out as any)[key] = row[key]
       }
-      if (!('id' in out) && 'id' in row) out.id = row.id
+      if ('id' in row && !('id' in out)) (out as any).id = row.id
     }
     if (args.include) {
       out = { ...out }

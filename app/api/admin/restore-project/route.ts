@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import type { JsonNull } from '@prisma/client'
 
 function ensureAdmin(session: any) {
   return session?.user && ['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')

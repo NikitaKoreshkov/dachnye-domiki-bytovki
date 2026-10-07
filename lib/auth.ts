@@ -84,7 +84,12 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = (user as { id?: string }).id
-        token.role = (user as { role?: string }).role
+        const role = (user as { role?: string }).role
+        if (role === 'USER' || role === 'ADMIN' || role === 'SUPER_ADMIN') {
+          token.role = role
+        } else {
+          token.role = 'USER'
+        }
         token.email = user.email ?? undefined
         token.name = user.name ?? undefined
         return token

@@ -208,7 +208,7 @@ export default function Hero() {
                 e.currentTarget.style.color = 'white'
                 e.currentTarget.style.borderColor = '#6B8E6B'
                 e.currentTarget.style.backdropFilter = 'blur(30px) saturate(200%)'
-                e.currentTarget.style.webkitBackdropFilter = 'blur(30px) saturate(200%)'
+                ;(e.currentTarget.style as any).webkitBackdropFilter = 'blur(30px) saturate(200%)'
                 e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.5)'
               }}
               onMouseLeave={(e) => {
@@ -216,7 +216,7 @@ export default function Hero() {
                 e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)'
                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)'
                 e.currentTarget.style.backdropFilter = 'blur(24px) saturate(180%)'
-                e.currentTarget.style.webkitBackdropFilter = 'blur(24px) saturate(180%)'
+                ;(e.currentTarget.style as any).webkitBackdropFilter = 'blur(24px) saturate(180%)'
                 e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
               }}
             >
