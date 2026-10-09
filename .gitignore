@@ -41,3 +41,6 @@ next-env.d.ts
 /generated/prisma
 
 /generated/prisma
+
+# local environment (never upload: the hosted build must run the demo store)
+.env
