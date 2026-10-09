@@ -1,8 +1,8 @@
 # Дачные-Домики-Бытовки
 
 🏠 [Домашняя страница](https://dachnye-domiki-bytovki.vercel.app) — Каркасные дома под ключ с калькулятором стоимости  
-📦 [Каталог проектов](https://dachnye-domiki-bytovki.vercel.app/catalog) — Фильтр по цене, площади, материалу и срокам  
-⚙️ [Админ панель](https://dachnye-domiki-bytovki.vercel.app/admin) — Управление каталогом и контентом (demo login: a@gmail.com / 123)
+📦 [Каталог проектов](https://dachnye-domiki-bytovki.vercel.app/catalog) — 19 проектов с фильтром по цене, площади, материалу и срокам  
+🔑 [Демо-вход](https://dachnye-domiki-bytovki.vercel.app/auth/signin) — `a@gmail.com` / `123`, после входа открывается [профиль](https://dachnye-domiki-bytovki.vercel.app/profile) с избранным и сравнением
 
 ---
 
@@ -22,7 +22,7 @@
 - **Frontend:** Next.js 14 App Router, React 18, TypeScript, Tailwind CSS, Framer Motion
 - **Backend:** Prisma ORM + PostgreSQL (или in-memory demo store)
 - **Auth:** NextAuth.js 4 с JWT сессиями, argon2 хеширование
-- **Deployment:** Vercel with auto-deploy on push to main
+- **Deployment:** Vercel (CLI deploys), demo store runs in memory when `DATABASE_URL` is absent
 
 ---
 
@@ -55,10 +55,16 @@ npm start
 **Homepage (Desktop):**  
 ![Главный экран](.github/assets/home.jpg)
 
+**Catalogue (19 projects):**  
+![Каталог](.github/assets/catalog.jpg)
+
+**Project detail:**  
+![Страница проекта](.github/assets/project.jpg)
+
 **Mobile Viewport (390px):**  
 ![Мобильная версия](.github/assets/mobile.jpg)
 
-*(Note: Screenshots will be captured from live deployment and added here)*
+*Captured from the live Vercel build in October 2026 at 1440×900 and 390×844, 2x DPR, JPEG q84.*
 
 ---
 
@@ -67,12 +73,12 @@ npm start
 ```
 dachnye-domiki-bytovki/
 ├── app/                      # Next.js App Router
-│   ├── (public)/             # Marketing landing pages
-│   ├── admin/                # Admin dashboard
 │   ├── api/                  # API routes (public + guarded)
+│   ├── auth/                 # Sign in and sign up pages
 │   ├── catalog/              # Product catalogue page
 │   ├── project/[id]/         # Single product detail
-│   └── profile/              # User area (favorites, compare, documents)
+│   ├── profile/              # User area (favorites, compare, documents)
+│   └── cookies/ privacy/ terms/  # Legal pages
 ├── components/               # React components
 │   ├── content/              # CMS block components
 │   └── catalog/              # Catalog UI components
