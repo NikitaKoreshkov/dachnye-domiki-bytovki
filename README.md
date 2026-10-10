@@ -1,8 +1,83 @@
+<div align="center">
+
 # Дачные-Домики-Бытовки
+
+**A frame-house and cabin store with 27 Prisma models — and an in-memory Prisma
+stand-in so the whole thing runs with no database at all.**
+19 catalog projects with price/area/material/deadline filters, a four-step price
+calculator, WhatsApp lead capture, a client profile with favorites and compare, and a
+15-block CMS behind `requireAdmin()`.
+
+**Live:** [dachnye-domiki-bytovki.vercel.app](https://dachnye-domiki-bytovki.vercel.app)
+
+![Next.js](https://img.shields.io/badge/next.js-14%20App%20Router-black?logo=next.js&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-27%20models%20%2B%201%20enum-2D3748?logo=prisma&logoColor=white)
+![Auth](https://img.shields.io/badge/NextAuth-JWT%20%2B%20argon2-5C4D7D)
+![Demo](https://img.shields.io/badge/demo-in--memory%20store%2C%20no%20DB-brightgreen)
+![Zod](https://img.shields.io/badge/validation-zod-3068b7)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+</div>
+
+---
+
+## The problem
+
+A builder of frame houses sells a configuration, not an SKU: area, material,
+finished-ness, deadline and site logistics all move the price. Every such company
+ends up with the same three artifacts — a catalog page, a "calculate price" form,
+and a manager who answers WhatsApp.
+
+The hard part is not building those. It is keeping 15 blocks of editable content
+consistent between what a visitor sees, what the admin edits and what the seed
+writes — which is exactly where this project had already broken.
+
+## What makes it different
+
+- **One source of truth for every editable block.** `lib/content/configs.ts` is the
+  single place defaults live, and `prisma/seed.ts`, the public read routes, the admin
+  write routes and the in-memory demo store all take their values from it. Before
+  that, each of the 15 CMS blocks had its fallback written twice — once in
+  `/api/<block>`, once in `/api/admin/<block>` — and the copies had drifted: the
+  calculator offered **three** house types to visitors and **two** to the admin, and
+  the WhatsApp message template was a full text in one file and the string
+  `Шаблон MAX` in the other.
+- **The demo store is a Prisma stand-in, not a fixture dump.** `lib/prisma.ts`
+  exports `hasDatabase = Boolean(process.env.DATABASE_URL)` and routes every call to
+  `createDemoStore()` (`lib/content/demo.ts`, 417 lines) when there is no
+  connection string — so the same 59 route handlers, the same admin panel and the
+  same profile pages work after `npm install` with zero infrastructure.
+- **XSS is blocked at the API boundary, not in the renderer.**
+  `lib/api.ts:82-84` rejects `script|iframe|object|embed|link|style|form|base` tags
+  and `javascript:` URLs in `href|src|xlink:href|action|formaction` on the way in —
+  which matters because the CMS stores HTML the admin writes and the storefront
+  renders it.
+- **argon2 is loaded lazily** (`lib/passwords.ts`), because a native module that
+  fails to build on Vercel would take the whole deploy down; the demo build works
+  without it.
+- **Rate limiting covers every public write** — the WhatsApp lead form, the
+  newsletter and the calculator request — via `lib/rate-limit.ts`.
+- **Documents are generated, not typed.** `puppeteer` is a runtime dependency for
+  rendering the contract and estimate a project produces from the calculator result.
+
+## Stack and size
+
+| 14 156 | 119 | 9 | 59 | 27 | 1 | 417 |
+| --- | --- | --- | --- | --- | --- | --- |
+| lines of TS/TSX | source files | pages | API routes | Prisma models | enums | lines in the demo store |
+
+Next.js 14 App Router, React 18, TypeScript, Tailwind CSS, Framer Motion,
+`lucide-react`. Prisma 6.18 on PostgreSQL, NextAuth 4 with JWT sessions and argon2
+hashing, `zod` for validation, `nodemailer` for mail, `puppeteer` for documents.
+
+---
+
 
 🏠 [Домашняя страница](https://dachnye-domiki-bytovki.vercel.app) — Каркасные дома под ключ с калькулятором стоимости  
 📦 [Каталог проектов](https://dachnye-domiki-bytovki.vercel.app/catalog) — 19 проектов с фильтром по цене, площади, материалу и срокам  
 🔑 [Демо-вход](https://dachnye-domiki-bytovki.vercel.app/auth/signin) — `a@gmail.com` / `123`, после входа открывается [профиль](https://dachnye-domiki-bytovki.vercel.app/profile) с избранным и сравнением
+
+---
 
 ---
 
@@ -86,10 +161,10 @@ dachnye-domiki-bytovki/
 │   ├── content/              # Content factory + mappers
 │   ├── api.ts               # Unified error handling
 │   ├── passwords.ts         # Lazy argon2 loader
-│   ├── demo.ts              # In-memory Prisma store
+│   ├── content/demo.ts        # In-memory Prisma stand-in (417 lines)
 │   └── rate-limit.ts        # Public form protection
 ├── prisma/
-│   └── schema.prisma        # 26 models, seeded fixtures
+│   └── schema.prisma        # 27 models + 1 enum, seeded fixtures
 └── public/images/           # Hero render + 11 crop variants
 ```
 
